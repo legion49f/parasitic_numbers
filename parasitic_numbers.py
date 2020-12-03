@@ -47,7 +47,7 @@ class Parasitic_Number(object):
                 return True
         return False
 
-    def random_parasitic_numbers(self, min:int, max:int, amount:int) -> None:
+    def random_parasitic_numbers(self, min:int, max:int, amount=1) -> None:
         amount+=self.count
         while(len(self.parasitic_numbers) < amount):
             length = randint(min, max)
@@ -63,51 +63,40 @@ class Parasitic_Number(object):
                 self.parasitic_numbers[number] = True
                 print(number)
 
-    def brute_force(self, num_threads:int, min:int, max:int , amount=1, method='randomized') -> None:
+    def brute_force(self, num_threads:int, min:int, max:int, method='exhaustive', amount=1) -> None:
         if method=='randomized':
             for i in range(num_threads):
                 x = threading.Thread(target=self.random_parasitic_numbers, args=(min, max, amount))
 
-        elif method =='exhaustive':
+        elif method == 'exhaustive':
             start, end = 1, 1
             for i in range(min-1):
                 start = start * 10
             for i in range(max-1):
                 end = end * 10
             work_per_thread = (end - start) // num_threads
-            start_of_work = work_per_thread + start
+            print('Work per Thread:', work_per_thread)
+            end_of_work = start + work_per_thread
             for i in range(num_threads):
                 if i == 0:
-                    print('start of work:', i, 'end of work', work_per_thread)
-                    # x = threading.Thread(target=self.random_parasitic_numbers, args=(i, work_per_thread))
+                    print('Thread:', i, 'start of work:', start, 'end of work', end_of_work )
+                    x = threading.Thread(target=self.exhaustive_parasitic_numbers, args=(start, end_of_work) )
                 else:
                     start_of_work = end_of_work
                     end_of_work+=work_per_thread
-                    # x = threading.Thread(target=self.random_parasitic_numbers, args=(start_of_work, work_per_thread))
-                    print('start of work:', start_of_work, 'end of work', end_of_work)
-            #     self.thread_list.append(x)
-            #     x.start()
+                    print('Thread:', i, 'start of work:', start_of_work, 'end of work', end_of_work)
+                    if i==num_threads:
+                        end_of_work=end
+                    x = threading.Thread(target=self.exhaustive_parasitic_numbers, args=(start_of_work, end_of_work) )
 
-            # for thread in self.thread_list:
-            #     thread.join()
+                self.thread_list.append(x)
+                x.start()
+
+            for thread in self.thread_list:
+                thread.join()
 
 if __name__ == '__main__':
     para = Parasitic_Number()
-    # print(para.__doc__)
-    # print( para.check_parasitic_property('410256') ) 
-    # print( para.check_parasitic_property('105263157894736842') ) 
-    # print( para.check_parasitic_property('1034482758620689655172413793') ) 
-    # print( para.check_parasitic_property('102040816326530612244897959183673469387755') ) 
-    # print( para.check_parasitic_property('1016949152542372881355932203389830508474576271186440677966') ) 
-    # print( para.check_parasitic_property('1014492753623188405797') ) 
-    # print( para.check_parasitic_property('1012658227848') ) 
-    # print( para.check_parasitic_property('10112359550561797752808988764044943820224719') )
-    # for item in possible:
-    #     print(para.check_parasitic_property(item))
     para.import_parasitic_nums('known_parasitic_numbers.txt')
-    # print('current amount:', len(para.parasitic_numbers))
-    # para.brute_force(num_threads=12, min=6, max=10, amount=7)
-    # para.exhaustive_parasitic_numbers(start=6, end=52)
-    para.brute_force(num_threads=12, min=6, max=7, method='exhaustive')
+    para.brute_force(num_threads=8, min=2, max=16, method='exhaustive')
     para.export_new_numbers('known_parasitic_numbers.txt')
-    
