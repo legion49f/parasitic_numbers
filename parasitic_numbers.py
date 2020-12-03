@@ -2,6 +2,7 @@ from random import choice, randint
 import math
 from string import digits
 import threading
+import multiprocessing
 
 class Parasitic_Number(object):
     """A Parasitic number (in base 10) is a Positive natural number which can be multiplied by n by moving the rightmost digit of its decimal representation to the front.
@@ -56,14 +57,15 @@ class Parasitic_Number(object):
                 self.parasitic_numbers[number] = True
                 print(number)
 
-    def exhaustive_parasitic_numbers(self, start, end) -> None:
+    def exhaustive_parasitic_numbers(self, start, end) -> dict:
         for number in range(start, end):
             number = str(number)
             if self.check_parasitic_property(number) and number not in self.parasitic_numbers:
                 self.parasitic_numbers[number] = True
                 print(number)
+        return self.parasitic_numbers
 
-    def brute_force(self, num_threads:int, min:int, max:int, method='exhaustive', amount=1) -> None:
+    def brute_force_threading(self, num_threads:int, min:int, max:int, method='exhaustive', amount=1) -> None:
         if method=='randomized':
             for i in range(num_threads):
                 x = threading.Thread(target=self.random_parasitic_numbers, args=(min, max, amount))
@@ -95,8 +97,44 @@ class Parasitic_Number(object):
             for thread in self.thread_list:
                 thread.join()
 
+    def brute_force_multiprocessing(self, min:int, max:int, method='exhaustive', amount=1) -> None:
+        num_of_processes = multiprocessing.cpu_count()
+        print('Starting randomized method')
+        if method=='randomized':
+            with multiprocessing.Pool(num_of_processes) as pool:
+                result = pool.starmap(self.random_parasitic_numbers, [ [min, max, amount] ] )
+
+        elif method == 'exhaustive':
+            start, end = 1, 1
+            for i in range(min-1):
+                start = start * 10
+            for i in range(max-1):
+                end = end * 10
+            work_per_thread = (end - start) // num_of_processes
+            print('Work per Thread:', work_per_thread)
+            end_of_work = start + work_per_thread
+            work_ranges = []
+            for i in range(num_of_processes):
+                if i == 0:
+                    print('Process:', i, 'start of work:', start, 'end of work', end_of_work )
+                    work_ranges.append([start, end_of_work])
+                else:
+                    start_of_work = end_of_work
+                    end_of_work+=work_per_thread
+                    print('Process:', i, 'start of work:', start_of_work, 'end of work', end_of_work)
+                    if i==num_of_processes:
+                        end_of_work=end
+                    work_ranges.append([start_of_work, end_of_work])
+
+            with multiprocessing.Pool(num_of_processes) as pool:
+                result = pool.starmap(self.exhaustive_parasitic_numbers, work_ranges )
+        return result
+
 if __name__ == '__main__':
     para = Parasitic_Number()
     para.import_parasitic_nums('known_parasitic_numbers.txt')
-    para.brute_force(num_threads=8, min=2, max=16, method='exhaustive')
-    para.export_new_numbers('known_parasitic_numbers.txt')
+    # para.brute_force_threading(num_threads=8, min=2, max=16, method='exhaustive')
+    # para.brute_force_multiprocessing(min=6, max=16, amount=8, method='randomized')
+    res = para.brute_force_multiprocessing(min=6, max=7, method='exhaustive')
+    print(res)
+    # para.export_new_numbers('known_parasitic_numbers.txt')
