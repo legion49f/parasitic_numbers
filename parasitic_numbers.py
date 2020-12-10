@@ -135,6 +135,6 @@ if __name__ == '__main__':
     para.import_parasitic_nums('known_parasitic_numbers.txt')
     # para.brute_force_threading(num_threads=8, min=2, max=16, method='exhaustive')
     # para.brute_force_multiprocessing(min=6, max=16, amount=8, method='randomized')
-    res = para.brute_force_multiprocessing(min=6, max=7, method='exhaustive')
+    res = para.brute_force_multiprocessing(min=13, max=14, method='exhaustive')
     print(res)
     # para.export_new_numbers('known_parasitic_numbers.txt')
